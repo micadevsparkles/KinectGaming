@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
+import android.widget.SeekBar
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -16,7 +17,6 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
 
-    // Registra o pedido de permissão da câmera
     private val requestCameraLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
@@ -33,47 +33,61 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        val prefs = getSharedPreferences("KinectPrefs", MODE_PRIVATE)
+
+        // Configura o Switch/Toggle do Serviço
         binding.btnToggleService.setOnCheckedChangeListener { _, isChecked ->
+            val serviceIntent = Intent(this, OverlayService::class.java)
             if (isChecked) {
-                checkPermissionsAndStart()
+                if (checkPermissionsAndStart()) {
+                    ContextCompat.startForegroundService(this, serviceIntent)
+                }
             } else {
                 binding.tvStatus.text = "Serviço Desativado"
                 binding.tvStatus.setTextColor(android.graphics.Color.parseColor("#AAAAAA"))
-                val serviceIntent = Intent(this, OverlayService::class.java)
-        ContextCompat.startForegroundService(this, serviceIntent)
-        // Salva o modo escolhido pelo usuário
-        binding.rgGameMode.setOnCheckedChangeListener { _, checkedId ->
-            val prefs = getSharedPreferences("KinectPrefs", MODE_PRIVATE)
-            val isSwipeMode = (checkedId == R.id.rbModeSwipe)
-            
-            prefs.edit().putBoolean("is_swipe_mode", isSwipeMode).apply()
-        }
+                stopService(serviceIntent)
             }
         }
+
+        // Seletor de Modo (Clique vs Swipe)
+        binding.rgGameMode.setOnCheckedChangeListener { _, checkedId ->
+            val isSwipeMode = (checkedId == R.id.rbModeSwipe)
+            prefs.edit().putBoolean("is_swipe_mode", isSwipeMode).apply()
+        }
+
+        // Configuração da SeekBar de Sensibilidade (DARK_THRESHOLD)
+        // Valor padrão salvo: 50 (escala de 10 a 150)
+        val savedThreshold = prefs.getInt("dark_threshold", 50)
+        binding.seekBarSensitivity?.progress = savedThreshold
+
+        binding.seekBarSensitivity?.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                // Garante um valor mínimo seguro para não bugar
+                val validProgress = if (progress < 10) 10 else progress
+                prefs.edit().putInt("dark_threshold", validProgress).apply()
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
     }
 
-    private fun checkPermissionsAndStart() {
-        // 1. Checa Sobreposição
+    private fun checkPermissionsAndStart(): Boolean {
         if (!Settings.canDrawOverlays(this)) {
             binding.btnToggleService.isChecked = false
             Toast.makeText(this, "Permita a sobreposição para ver os controles no jogo.", Toast.LENGTH_LONG).show()
-            val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
+            val intent = Intent(Intent.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
             startActivity(intent)
-            return
+            return false
         }
 
-        // 2. Checa Câmera
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             binding.btnToggleService.isChecked = false
             requestCameraLauncher.launch(Manifest.permission.CAMERA)
-            return
+            return false
         }
 
-        // Se tem as duas permissões, liga o sistema!
         binding.tvStatus.text = "Kinect Ativo (Rodando em Segundo Plano)"
         binding.tvStatus.setTextColor(android.graphics.Color.GREEN)
-        
-        val serviceIntent = Intent(this, OverlayService::class.java)
-        stopService(serviceIntent)
+        return true
     }
 }
