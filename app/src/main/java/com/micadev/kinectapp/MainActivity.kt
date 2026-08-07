@@ -75,7 +75,7 @@ class MainActivity : AppCompatActivity() {
         if (!Settings.canDrawOverlays(this)) {
             binding.btnToggleService.isChecked = false
             Toast.makeText(this, "Permita a sobreposição para ver os controles no jogo.", Toast.LENGTH_LONG).show()
-            val intent = Intent(Intent.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
+            val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
             startActivity(intent)
             return false
         }
