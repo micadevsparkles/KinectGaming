@@ -29,6 +29,10 @@ class CameraColorIdentifier(private val onGestureDetected: (String) -> Unit) : I
         var sumX = 0
         var sumY = 0
 
+        val prefs = context.getSharedPreferences("KinectPrefs", Context.MODE_PRIVATE)
+val targetX = prefs.getFloat("target_x", 500f)
+val targetY = prefs.getFloat("target_y", 800f)
+
         // Varremos a imagem pulando de 4 em 4 pixels para economizar processamento
         for (y in 0 until height step 4) {
             for (x in 0 until width step 4) {
@@ -60,7 +64,7 @@ class CameraColorIdentifier(private val onGestureDetected: (String) -> Unit) : I
                     
                     // Dispara o toque físico simulado na tela do jogo
                     // Altere os valores (500f, 800f) para a posição exata do botão no seu jogo
-                    TouchDispatcher.clickAt(500f, 800f)
+                    TouchDispatcher.clickAt(targetX, targetY)
                 }
             }
         }
