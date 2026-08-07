@@ -10,6 +10,10 @@ class CameraColorIdentifier(private val onGestureDetected: (String) -> Unit) : I
     // Tudo abaixo de 50 é considerado "preto" (sua luva/camisa).
     private val DARK_THRESHOLD = 50 
 
+    // Controle de tempo para evitar múltiplos cliques seguidos por frame
+    private var lastGestureTime = 0L
+    private val cooldownMillis = 500L // meio segundo entre um soco e outro
+
     @SuppressLint("UnsafeOptInUsageError")
     override fun analyze(image: ImageProxy) {
         // Acessamos apenas o plano 0 (Luminância/Y) para ser ultra-rápido
@@ -45,10 +49,19 @@ class CameraColorIdentifier(private val onGestureDetected: (String) -> Unit) : I
             val centerX = sumX / darkPixelsCount
             val centerY = sumY / darkPixelsCount
 
-            // Lógica simples de exemplo:
             // Se o centro da mancha preta estiver na parte superior da imagem, é um Soco!
             if (centerY < height / 3) {
-                onGestureDetected("SOCO_ALTO")
+                val currentTime = System.currentTimeMillis()
+                
+                if (currentTime - lastGestureTime > cooldownMillis) {
+                    lastGestureTime = currentTime
+                    
+                    onGestureDetected("SOCO_ALTO")
+                    
+                    // Dispara o toque físico simulado na tela do jogo
+                    // Altere os valores (500f, 800f) para a posição exata do botão no seu jogo
+                    TouchDispatcher.clickAt(500f, 800f)
+                }
             }
         }
 
