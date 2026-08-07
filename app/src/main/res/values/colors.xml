@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg_dark">#121212</color>
+    <color name="btn_off">#F44336</color>
+    <color name="btn_off_pressed">#D32F2F</color>
+    <color name="btn_on">#4CAF50</color>
+    <color name="btn_on_pressed">#388E3C</color>
+    <color name="text_light">#FFFFFF</color>
+</resources>
