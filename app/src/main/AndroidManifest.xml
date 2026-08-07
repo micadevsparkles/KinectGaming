@@ -6,6 +6,8 @@
     <uses-feature android:name="android.hardware.camera" />
     <!-- Permissão para desenhar sobre outros apps (Overlay) -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
 
     <application
         android:allowBackup="true"
