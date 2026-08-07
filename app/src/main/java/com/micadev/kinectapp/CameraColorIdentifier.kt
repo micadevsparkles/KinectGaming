@@ -72,4 +72,15 @@ val targetY = prefs.getFloat("target_y", 800f)
         // É obrigatório fechar a imagem para o CameraX liberar o próximo frame
         image.close() 
     }
+// Lógica para detectar direção
+if (centerY < height / 3) {
+    // Detectou movimento na parte de cima da tela -> Pular (Swipe para cima)
+    TouchDispatcher.service?.simulateSwipe(500f, 1000f, 500f, 200f)
+} else if (centerX < width / 3) {
+    // Detectou movimento à esquerda -> Deslizar para a esquerda
+    TouchDispatcher.service?.simulateSwipe(800f, 800f, 200f, 800f)
+} else if (centerX > 2 * width / 3) {
+    // Detectou movimento à direita -> Deslizar para a direita
+    TouchDispatcher.service?.simulateSwipe(200f, 800f, 800f, 800f)
+}
 }
