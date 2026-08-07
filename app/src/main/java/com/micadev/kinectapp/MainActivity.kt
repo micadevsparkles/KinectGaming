@@ -66,6 +66,7 @@ class MainActivity : AppCompatActivity() {
         binding.tvStatus.text = "Kinect Ativo (Rodando em Segundo Plano)"
         binding.tvStatus.setTextColor(android.graphics.Color.GREEN)
         
-        // TODO: Iniciar o OverlayService aqui futuramente
+        val serviceIntent = Intent(this, OverlayService::class.java)
+        stopService(serviceIntent)
     }
 }
