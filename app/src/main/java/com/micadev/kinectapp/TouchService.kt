@@ -43,4 +43,16 @@ class TouchService : AccessibilityService() {
         TouchDispatcher.service = null
         return super.onUnbind(intent)
     }
+    fun simulateSwipe(startX: Float, startY: Float, endX: Float, endY: Float) {
+    val path = Path().apply {
+        moveTo(startX, startY)
+        lineTo(endX, endY)
+    }
+    
+    // Duração de 100ms para parecer um gesto natural de dedo
+    val stroke = GestureDescription.StrokeDescription(path, 0, 100)
+    val gesture = GestureDescription.Builder().addStroke(stroke).build()
+    
+    dispatchGesture(gesture, null, null)
+}
 }
