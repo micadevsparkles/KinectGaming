@@ -41,6 +41,13 @@ class MainActivity : AppCompatActivity() {
                 binding.tvStatus.setTextColor(android.graphics.Color.parseColor("#AAAAAA"))
                 val serviceIntent = Intent(this, OverlayService::class.java)
         ContextCompat.startForegroundService(this, serviceIntent)
+        // Salva o modo escolhido pelo usuário
+        binding.rgGameMode.setOnCheckedChangeListener { _, checkedId ->
+            val prefs = getSharedPreferences("KinectPrefs", MODE_PRIVATE)
+            val isSwipeMode = (checkedId == R.id.rbModeSwipe)
+            
+            prefs.edit().putBoolean("is_swipe_mode", isSwipeMode).apply()
+        }
             }
         }
     }
