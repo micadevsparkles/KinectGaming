@@ -5,12 +5,16 @@ import android.accessibilityservice.GestureDescription
 import android.graphics.Path
 import android.view.accessibility.AccessibilityEvent
 
-// Esta é a "Ponte" global. Qualquer parte do app pode chamar TouchDispatcher.clickAt(x, y)
+// Esta é a "Ponte" global. Qualquer parte do app pode chamar TouchDispatcher.clickAt(x, y) ou TouchDispatcher.swipe(...)
 object TouchDispatcher {
     var service: TouchService? = null
     
     fun clickAt(x: Float, y: Float) {
         service?.simulateClick(x, y)
+    }
+
+    fun swipe(startX: Float, startY: Float, endX: Float, endY: Float) {
+        service?.simulateSwipe(startX, startY, endX, endY)
     }
 }
 
@@ -43,16 +47,17 @@ class TouchService : AccessibilityService() {
         TouchDispatcher.service = null
         return super.onUnbind(intent)
     }
+
     fun simulateSwipe(startX: Float, startY: Float, endX: Float, endY: Float) {
-    val path = Path().apply {
-        moveTo(startX, startY)
-        lineTo(endX, endY)
+        val path = Path().apply {
+            moveTo(startX, startY)
+            lineTo(endX, endY)
+        }
+        
+        // Duração de 100ms para parecer um gesto natural de dedo
+        val stroke = GestureDescription.StrokeDescription(path, 0, 100)
+        val gesture = GestureDescription.Builder().addStroke(stroke).build()
+        
+        dispatchGesture(gesture, null, null)
     }
-    
-    // Duração de 100ms para parecer um gesto natural de dedo
-    val stroke = GestureDescription.StrokeDescription(path, 0, 100)
-    val gesture = GestureDescription.Builder().addStroke(stroke).build()
-    
-    dispatchGesture(gesture, null, null)
-}
 }
