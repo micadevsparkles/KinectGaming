@@ -30,6 +30,36 @@
         app:layout_constraintTop_toBottomOf="@id/tvTitle"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
+    
+    <!-- Seletor de Modo de Jogo -->
+    <RadioGroup
+        android:id="@+id/rgGameMode"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="24dp"
+        app:layout_constraintTop_toBottomOf="@id/tvStatus"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <RadioButton
+            android:id="@+id/rbModeClick"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Modo Clique"
+            android:textColor="@color/text_light"
+            android:checked="true"
+            android:buttonTint="@color/btn_on"
+            android:layout_marginEnd="16dp"/>
+
+        <RadioButton
+            android:id="@+id/rbModeSwipe"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Modo Swipe"
+            android:textColor="@color/text_light"
+            android:buttonTint="@color/btn_on"/>
+    </RadioGroup>
 
     <!-- ToggleButton Gigante -->
     <ToggleButton
