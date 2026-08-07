@@ -39,7 +39,8 @@ class MainActivity : AppCompatActivity() {
             } else {
                 binding.tvStatus.text = "Serviço Desativado"
                 binding.tvStatus.setTextColor(android.graphics.Color.parseColor("#AAAAAA"))
-                // TODO: Parar o OverlayService aqui futuramente
+                val serviceIntent = Intent(this, OverlayService::class.java)
+        ContextCompat.startForegroundService(this, serviceIntent)
             }
         }
     }
