@@ -30,7 +30,6 @@ class OverlayService : LifecycleService() {
     override fun onCreate() {
         super.onCreate()
         
-        // Android exige uma notificação para manter a câmera ligada em segundo plano
         createNotificationChannel()
         startForeground(1, NotificationCompat.Builder(this, "KINECT_CHANNEL")
             .setContentTitle("Kinect Caseiro")
@@ -67,20 +66,18 @@ class OverlayService : LifecycleService() {
                 it.setSurfaceProvider(overlayView.findViewById<PreviewView>(R.id.viewFinder).surfaceProvider)
             }
 
-            // Integra nosso identificador de cor preta
             val imageAnalyzer = ImageAnalysis.Builder()
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .build()
                 .also { analysis ->
-                    analysis.setAnalyzer(cameraExecutor, CameraColorIdentifier { gesture ->
-                        // Atualiza a tela flutuante com o golpe!
+                    // Passa o Context atual para ler a sensibilidade e o modo nas preferências
+                    analysis.setAnalyzer(cameraExecutor, CameraColorIdentifier(this) { gesture ->
                         ContextCompat.getMainExecutor(this).execute {
                             overlayView.findViewById<TextView>(R.id.tvGestureOutput).text = gesture
                         }
                     })
                 }
 
-            // Usar a câmera frontal para olhar para você
             val cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
 
             try {
