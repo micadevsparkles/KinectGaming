@@ -34,7 +34,7 @@ class OverlayService : LifecycleService() {
         startForeground(1, NotificationCompat.Builder(this, "KINECT_CHANNEL")
             .setContentTitle("Kinect Caseiro")
             .setContentText("Detectando movimentos no jogo...")
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(android.R.drawable.ic_menu_camera)
             .build())
 
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
