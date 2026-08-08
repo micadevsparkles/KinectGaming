@@ -2,6 +2,7 @@ package com.micadev.kinectapp
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.res.Resources
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 
@@ -11,93 +12,85 @@ class CameraColorIdentifier(
 ) : ImageAnalysis.Analyzer {
 
     private var lastGestureTime = 0L
-    private val cooldownMillis = 400L
+    private val cooldownMillis = 500L
+    private var currentSwipeState = "CENTRO"
 
     @SuppressLint("UnsafeOptInUsageError")
     override fun analyze(image: ImageProxy) {
-        val yPlane = image.planes[0]
-        val buffer = yPlane.buffer
-        val data = ByteArray(buffer.capacity())
-        buffer.get(data)
+        // Planos da imagem (Y = Brilho, U = Diferença de Azul, V = Diferença de Vermelho)
+        val uPlane = image.planes[1]
+        val vPlane = image.planes[2]
 
         val width = image.width
         val height = image.height
 
         val prefs = context.getSharedPreferences("KinectPrefs", Context.MODE_PRIVATE)
-        val darkThreshold = prefs.getInt("dark_threshold", 50)
         val isSwipeMode = prefs.getBoolean("is_swipe_mode", false)
 
-        val darkBlobs = mutableListOf<Pair<Int, Int>>()
+        var bluePixelsCount = 0
+        var sumX = 0
+        var sumY = 0
 
         for (y in 0 until height step 6) {
             for (x in 0 until width step 6) {
-                val index = y * yPlane.rowStride + x * yPlane.pixelStride
-                val pixelValue = data[index].toInt() and 0xFF 
+                val uIndex = (y / 2) * uPlane.rowStride + (x / 2) * uPlane.pixelStride
+                val vIndex = (y / 2) * vPlane.rowStride + (x / 2) * vPlane.pixelStride
 
-                if (pixelValue < darkThreshold) {
-                    darkBlobs.add(Pair(x, y))
+                val uVal = uPlane.buffer.get(uIndex).toInt() and 0xFF
+                val vVal = vPlane.buffer.get(vIndex).toInt() and 0xFF
+
+                // Rastreamento da cor Azul: alto U (azul) e baixo V (vermelho)
+                if (uVal > 150 && vVal < 130) {
+                    bluePixelsCount++
+                    sumX += x
+                    sumY += y
                 }
             }
         }
 
-        if (darkBlobs.size > 50) {
-            val centerXLimit = width / 2
-            val upperHeightLimit = height / 2
+        if (bluePixelsCount > 20) {
+            val cx = sumX / bluePixelsCount
+            val cy = sumY / bluePixelsCount
 
-            var bodyPixels = 0
-            var leftHandPixels = 0
-            var rightHandPixels = 0
+            // Divisão da tela da câmera com área neutra (deadzone) no centro (35% a 65%)
+            val leftBound = width * 0.35f
+            val rightBound = width * 0.65f
+            val topBound = height * 0.35f
+            val bottomBound = height * 0.65f
 
-            var leftHandSumY = 0
-            var rightHandSumY = 0
+            val currentTime = System.currentTimeMillis()
 
-            for (blob in darkBlobs) {
-                val bx = blob.first
-                val by = blob.second
+            if (currentTime - lastGestureTime > cooldownMillis) {
+                if (isSwipeMode) {
+                    var detectedDirection = "CENTRO"
 
-                if (bx in (width / 4)..(3 * width / 4) && by > upperHeightLimit) {
-                    bodyPixels++
-                } 
-                else if (bx < centerXLimit && by <= upperHeightLimit) {
-                    leftHandPixels++
-                    leftHandSumY += by
-                } 
-                else if (bx >= centerXLimit && by <= upperHeightLimit) {
-                    rightHandPixels++
-                    rightHandSumY += by
-                }
-            }
+                    if (cy < topBound) detectedDirection = "CIMA"
+                    else if (cy > bottomBound) detectedDirection = "BAIXO"
+                    else if (cx < leftBound) detectedDirection = "DIREITA" // Invertido por causa do espelhamento da frontal
+                    else if (cx > rightBound) detectedDirection = "ESQUERDA"
 
-            val hasBodyDetected = bodyPixels > 80
-
-            if (hasBodyDetected) {
-                val currentTime = System.currentTimeMillis()
-
-                if (currentTime - lastGestureTime > cooldownMillis) {
-                    
-                    if (leftHandPixels > 15) {
+                    if (detectedDirection != "CENTRO" && detectedDirection != currentSwipeState) {
                         lastGestureTime = currentTime
-                        if (isSwipeMode) {
-                            onGestureDetected("LUVA ESQ: Swipe Esquerda")
-                            TouchDispatcher.swipe(800f, 1000f, 200f, 1000f)
-                        } else {
-                            onGestureDetected("SOCO ESQ (Ataque)")
-                            val targetX = prefs.getFloat("target_x", 300f)
-                            val targetY = prefs.getFloat("target_y", 800f)
-                            TouchDispatcher.clickAt(targetX, targetY)
-                        }
-                    } 
-                    else if (rightHandPixels > 15) {
+                        currentSwipeState = detectedDirection
+                        onGestureDetected("AZUL: Swipe $detectedDirection")
+                        TouchDispatcher.swipeDirection(detectedDirection)
+                    } else if (detectedDirection == "CENTRO") {
+                        currentSwipeState = "CENTRO" 
+                    }
+                } else {
+                    // Modo Soco: Se a cor azul sair do centro para os lados, executa o clique
+                    if (cx < leftBound || cx > rightBound) {
                         lastGestureTime = currentTime
-                        if (isSwipeMode) {
-                            onGestureDetected("LUVA DIR: Swipe Direita")
-                            TouchDispatcher.swipe(200f, 1000f, 800f, 1000f)
-                        } else {
-                            onGestureDetected("SOCO DIR (Ataque)")
-                            val targetX = prefs.getFloat("target_x", 700f)
-                            val targetY = prefs.getFloat("target_y", 800f)
-                            TouchDispatcher.clickAt(targetX, targetY)
-                        }
+                        onGestureDetected("AZUL: Clique Registrado!")
+                        
+                        // Busca o tamanho real da tela para adaptar perfeitamente ao modo paisagem
+                        val screenWidth = Resources.getSystem().displayMetrics.widthPixels.toFloat()
+                        val screenHeight = Resources.getSystem().displayMetrics.heightPixels.toFloat()
+                        
+                        val targetX = prefs.getFloat("target_x", screenWidth * 0.8f)
+                        val targetY = prefs.getFloat("target_y", screenHeight * 0.8f)
+                        
+                        TouchDispatcher.clickAt(targetX, targetY)
                     }
                 }
             }
