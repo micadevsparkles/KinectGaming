@@ -41,7 +41,7 @@ class OverlayService : LifecycleService() {
         createNotificationChannel()
         startForeground(1, NotificationCompat.Builder(this, "KINECT_CHANNEL")
             .setContentTitle("Kinect Caseiro")
-            .setContentText("Detectando movimentos no jogo...")
+            .setContentText("Detectando a cor azul no jogo...")
             .setSmallIcon(android.R.drawable.ic_menu_camera)
             .build())
 
@@ -49,8 +49,8 @@ class OverlayService : LifecycleService() {
         overlayView = LayoutInflater.from(this).inflate(R.layout.layout_floating_camera, null)
 
         val params = WindowManager.LayoutParams(
-            480, 
-            640, 
+            240, // Janela reduzida para não cobrir o jogo
+            320, 
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON,
             PixelFormat.TRANSLUCENT
@@ -105,7 +105,7 @@ class OverlayService : LifecycleService() {
                         ContextCompat.getMainExecutor(this).execute {
                             val tvGestureOutput = overlayView.findViewById<TextView>(R.id.tvGestureOutput)
                             tvGestureOutput.text = gesture
-                            tvGestureOutput.setTextColor(android.graphics.Color.BLUE)
+                            tvGestureOutput.setTextColor(android.graphics.Color.BLUE) // Texto em azul para identificar o rastreador
                         }
                     })
                 }
