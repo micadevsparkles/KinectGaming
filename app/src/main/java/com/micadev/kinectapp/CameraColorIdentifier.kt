@@ -23,15 +23,12 @@ class CameraColorIdentifier(
         val width = image.width
         val height = image.height
 
-        // Lê o limiar de sensibilidade configurado na SeekBar pelo usuário (padrão: 50)
         val prefs = context.getSharedPreferences("KinectPrefs", Context.MODE_PRIVATE)
         val darkThreshold = prefs.getInt("dark_threshold", 50)
         val isSwipeMode = prefs.getBoolean("is_swipe_mode", false)
 
-        // Listas para rastrear o centro das manchas escuras detectadas
         val darkBlobs = mutableListOf<Pair<Int, Int>>()
 
-        // Varredura da imagem pulando de 6 em 6 pixels para máxima performance em tempo real
         for (y in 0 until height step 6) {
             for (x in 0 until width step 6) {
                 val index = y * yPlane.rowStride + x * yPlane.pixelStride
@@ -43,12 +40,7 @@ class CameraColorIdentifier(
             }
         }
 
-        // Se houver pixels escuros suficientes para rastreamento
         if (darkBlobs.size > 50) {
-            // Separação em regies da câmera:
-            // Tronco/Corpo: Centro da imagem
-            // Luva Esquerda e Luva Direita: Laterais superiores
-            
             val centerXLimit = width / 2
             val upperHeightLimit = height / 2
 
@@ -63,23 +55,19 @@ class CameraColorIdentifier(
                 val bx = blob.first
                 val by = blob.second
 
-                // Identifica se é o tronco (camisa preta centralizada)
                 if (bx in (width / 4)..(3 * width / 4) && by > upperHeightLimit) {
                     bodyPixels++
                 } 
-                // Luva Esquerda (Lado esquerdo da tela da câmera = sua mão direita)
                 else if (bx < centerXLimit && by <= upperHeightLimit) {
                     leftHandPixels++
                     leftHandSumY += by
                 } 
-                // Luva Direita (Lado direito da tela da câmera = sua mão esquerda)
                 else if (bx >= centerXLimit && by <= upperHeightLimit) {
                     rightHandPixels++
                     rightHandSumY += by
                 }
             }
 
-            // Valida se o "Corpo" (camisa) está presente para estabilizar o esqueleto
             val hasBodyDetected = bodyPixels > 80
 
             if (hasBodyDetected) {
@@ -87,7 +75,6 @@ class CameraColorIdentifier(
 
                 if (currentTime - lastGestureTime > cooldownMillis) {
                     
-                    // Detecta soco da Luva Esquerda (subiu acima da média esperada)
                     if (leftHandPixels > 15) {
                         lastGestureTime = currentTime
                         if (isSwipeMode) {
@@ -100,7 +87,6 @@ class CameraColorIdentifier(
                             TouchDispatcher.clickAt(targetX, targetY)
                         }
                     } 
-                    // Detecta soco da Luva Direita
                     else if (rightHandPixels > 15) {
                         lastGestureTime = currentTime
                         if (isSwipeMode) {
@@ -116,7 +102,6 @@ class CameraColorIdentifier(
                 }
             }
         }
-
         image.close()
     }
 }
