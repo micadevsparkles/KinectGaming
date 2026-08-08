@@ -1,5 +1,6 @@
 package com.micadev.kinectapp
 
+import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Intent
@@ -7,6 +8,7 @@ import android.graphics.PixelFormat
 import android.os.Build
 import android.view.Gravity
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.widget.TextView
@@ -27,6 +29,12 @@ class OverlayService : LifecycleService() {
     private lateinit var overlayView: View
     private lateinit var cameraExecutor: ExecutorService
 
+    private var initialX: Int = 0
+    private var initialY: Int = 0
+    private var initialTouchX: Float = 0f
+    private var initialTouchY: Float = 0f
+
+    @SuppressLint("ClickableViewAccessibility", "InflateParams")
     override fun onCreate() {
         super.onCreate()
         
@@ -41,8 +49,8 @@ class OverlayService : LifecycleService() {
         overlayView = LayoutInflater.from(this).inflate(R.layout.layout_floating_camera, null)
 
         val params = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.WRAP_CONTENT,
+            480, 
+            640, 
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON,
             PixelFormat.TRANSLUCENT
@@ -50,6 +58,29 @@ class OverlayService : LifecycleService() {
             gravity = Gravity.TOP or Gravity.START
             x = 20
             y = 20
+        }
+
+        overlayView.setOnTouchListener { view, event ->
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    initialX = params.x
+                    initialY = params.y
+                    initialTouchX = event.rawX
+                    initialTouchY = event.rawY
+                    true
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    params.x = initialX + (event.rawX - initialTouchX).toInt()
+                    params.y = initialY + (event.rawY - initialTouchY).toInt()
+                    windowManager.updateViewLayout(overlayView, params)
+                    true
+                }
+                MotionEvent.ACTION_UP -> {
+                    view.performClick()
+                    true
+                }
+                else -> false
+            }
         }
 
         windowManager.addView(overlayView, params)
@@ -70,10 +101,11 @@ class OverlayService : LifecycleService() {
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .build()
                 .also { analysis ->
-                    // Passa o Context atual para ler a sensibilidade e o modo nas preferências
                     analysis.setAnalyzer(cameraExecutor, CameraColorIdentifier(this) { gesture ->
                         ContextCompat.getMainExecutor(this).execute {
-                            overlayView.findViewById<TextView>(R.id.tvGestureOutput).text = gesture
+                            val tvGestureOutput = overlayView.findViewById<TextView>(R.id.tvGestureOutput)
+                            tvGestureOutput.text = gesture
+                            tvGestureOutput.setTextColor(android.graphics.Color.BLUE)
                         }
                     })
                 }
