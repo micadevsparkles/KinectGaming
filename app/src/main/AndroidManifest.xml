@@ -3,7 +3,6 @@
 
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" />
-    <!-- Permissão para desenhar sobre outros apps (Overlay) -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
@@ -23,13 +22,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <!-- Serviço da Câmera em Overlay -->
+        
         <service
             android:name=".OverlayService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="camera" />
-        <!-- Serviço de Acessibilidade (Auto Clicker) -->
+            
         <service
             android:name=".TouchService"
             android:exported="true"
