@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
+import android.view.accessibility.AccessibilityManager
 import android.widget.SeekBar
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -35,7 +36,6 @@ class MainActivity : AppCompatActivity() {
 
         val prefs = getSharedPreferences("KinectPrefs", MODE_PRIVATE)
 
-        // Configura o Switch/Toggle do Serviço
         binding.btnToggleService.setOnCheckedChangeListener { _, isChecked ->
             val serviceIntent = Intent(this, OverlayService::class.java)
             if (isChecked) {
@@ -49,20 +49,16 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Seletor de Modo (Clique vs Swipe)
         binding.rgGameMode.setOnCheckedChangeListener { _, checkedId ->
             val isSwipeMode = (checkedId == R.id.rbModeSwipe)
             prefs.edit().putBoolean("is_swipe_mode", isSwipeMode).apply()
         }
 
-        // Configuração da SeekBar de Sensibilidade (DARK_THRESHOLD)
-        // Valor padrão salvo: 50 (escala de 10 a 150)
         val savedThreshold = prefs.getInt("dark_threshold", 50)
         binding.seekBarSensitivity?.progress = savedThreshold
 
         binding.seekBarSensitivity?.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                // Garante um valor mínimo seguro para não bugar
                 val validProgress = if (progress < 10) 10 else progress
                 prefs.edit().putInt("dark_threshold", validProgress).apply()
             }
@@ -80,6 +76,14 @@ class MainActivity : AppCompatActivity() {
             return false
         }
 
+        if (!isAccessibilityServiceEnabled()) {
+            binding.btnToggleService.isChecked = false
+            Toast.makeText(this, "Ative o Kinect App nas Configurações de Acessibilidade!", Toast.LENGTH_LONG).show()
+            val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+            startActivity(intent)
+            return false
+        }
+
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             binding.btnToggleService.isChecked = false
             requestCameraLauncher.launch(Manifest.permission.CAMERA)
@@ -87,7 +91,19 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.tvStatus.text = "Kinect Ativo (Rodando em Segundo Plano)"
-        binding.tvStatus.setTextColor(android.graphics.Color.GREEN)
+        binding.tvStatus.setTextColor(android.graphics.Color.BLUE)
         return true
+    }
+
+    private fun isAccessibilityServiceEnabled(): Boolean {
+        val am = getSystemService(ACCESSIBILITY_SERVICE) as AccessibilityManager
+        val enabledServices = am.getEnabledAccessibilityServiceList(android.accessibilityservice.AccessibilityServiceInfo.FEEDBACK_ALL_MASK)
+        for (service in enabledServices) {
+            val serviceId = service.resolveInfo.serviceInfo
+            if (serviceId.packageName == packageName && serviceId.name == TouchService::class.java.name) {
+                return true
+            }
+        }
+        return false
     }
 }
