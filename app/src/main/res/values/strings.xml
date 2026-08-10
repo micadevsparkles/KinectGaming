@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Kinect App</string>
+    <string name="accessibility_description">Permite que o aplicativo controle toques na tela com base nos movimentos capturados pela câmera.</string>
+</resources>

@@ -97,7 +97,6 @@ class OverlayService : LifecycleService() {
                 it.setSurfaceProvider(overlayView.findViewById<PreviewView>(R.id.viewFinder).surfaceProvider)
             }
 
-            // RGBA_8888 é obrigatório para converter ImageProxy em Bitmap sem bugs para o MediaPipe
             val imageAnalyzer = ImageAnalysis.Builder()
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)

@@ -39,7 +39,6 @@ class MediaPipeHandTracker(
 
     @androidx.annotation.OptIn(androidx.camera.core.ExperimentalGetImage::class)
     override fun analyze(imageProxy: ImageProxy) {
-        // toBitmap() requer formato RGBA_8888 configurado no ImageAnalysis.Builder
         val bitmap = imageProxy.toBitmap()
         val mpImage = BitmapImageBuilder(bitmap).build()
         
@@ -47,10 +46,8 @@ class MediaPipeHandTracker(
         
         result?.let {
             if (it.landmarks().isNotEmpty()) {
-                // Captura o Dedo Indicador (Landmark 8)
                 val indexFinger = it.landmarks()[0][8]
                 
-                // Coordenadas normalizadas (0.0 a 1.0). Inversão no X por causa do espelhamento da câmera frontal.
                 val cx = 1.0f - indexFinger.x()
                 val cy = indexFinger.y()
 
@@ -82,7 +79,6 @@ class MediaPipeHandTracker(
                             currentSwipeState = "CENTRO"
                         }
                     } else {
-                        // MODO SOCO
                         if (cx < leftBound || cx > rightBound) {
                             lastGestureTime = currentTime
                             onGestureDetected("MÃO: Clique Detectado!")
