@@ -22,114 +22,111 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleService
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import android.graphics.drawable.GradientDrawable
 
 class OverlayService : LifecycleService() {
 
     private lateinit var windowManager: WindowManager
-    private lateinit var overlayView: View
-    private lateinit var cameraExecutor: ExecutorService
+    private lateinit var cameraView: View
+    private lateinit var targetView: View // Nova Janela para o Alvo
+    private lateinit var cameraExecutor: java.util.concurrent.ExecutorService
 
-    private var initialX: Int = 0
-    private var initialY: Int = 0
-    private var initialTouchX: Float = 0f
-    private var initialTouchY: Float = 0f
-
-    @SuppressLint("ClickableViewAccessibility", "InflateParams")
     override fun onCreate() {
         super.onCreate()
-        
-        createNotificationChannel()
-        startForeground(1, NotificationCompat.Builder(this, "KINECT_CHANNEL")
-            .setContentTitle("Kinect Caseiro")
-            .setContentText("MediaPipe Hand Tracking ativo...")
-            .setSmallIcon(android.R.drawable.ic_menu_camera)
-            .build())
-
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
-        overlayView = LayoutInflater.from(this).inflate(R.layout.layout_floating_camera, null)
+        
+        setupTargetCircle()
+        setupCameraWindow()
+        
+        cameraExecutor = java.util.concurrent.Executors.newSingleThreadExecutor()
+        startCamera()
+    }
 
-        val params = WindowManager.LayoutParams(
-            240, 
-            320, 
-            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON,
-            PixelFormat.TRANSLUCENT
-        ).apply {
-            gravity = Gravity.TOP or Gravity.START
-            x = 20
-            y = 20
+    private fun setupTargetCircle() {
+        // Cria visualmente o círculo tracejado via código
+        targetView = android.widget.FrameLayout(this).apply {
+            val circle = android.view.View(context).apply {
+                background = GradientDrawable().apply {
+                    shape = GradientDrawable.OVAL
+                    setStroke(10, android.graphics.Color.BLACK, 20f, 10f) // Borda tracejada
+                    setColor(android.graphics.Color.TRANSPARENT)
+                }
+                layoutParams = android.widget.FrameLayout.LayoutParams(150, 150)
+            }
+            addView(circle)
         }
 
-        overlayView.setOnTouchListener { view, event ->
+        val params = WindowManager.LayoutParams(
+            150, 150,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+            android.graphics.PixelFormat.TRANSLUCENT
+        )
+        params.gravity = android.view.Gravity.CENTER
+
+        // Arrastar o Alvo
+        var initX = 0; var initY = 0; var initTouchX = 0f; var initTouchY = 0f
+        targetView.setOnTouchListener { _, event ->
             when (event.action) {
-                MotionEvent.ACTION_DOWN -> {
-                    initialX = params.x
-                    initialY = params.y
-                    initialTouchX = event.rawX
-                    initialTouchY = event.rawY
+                android.view.MotionEvent.ACTION_DOWN -> {
+                    initX = params.x; initY = params.y
+                    initTouchX = event.rawX; initTouchY = event.rawY
                     true
                 }
-                MotionEvent.ACTION_MOVE -> {
-                    params.x = initialX + (event.rawX - initialTouchX).toInt()
-                    params.y = initialY + (event.rawY - initialTouchY).toInt()
-                    windowManager.updateViewLayout(overlayView, params)
-                    true
-                }
-                MotionEvent.ACTION_UP -> {
-                    view.performClick()
+                android.view.MotionEvent.ACTION_MOVE -> {
+                    params.x = initX + (event.rawX - initTouchX).toInt()
+                    params.y = initY + (event.rawY - initTouchY).toInt()
+                    windowManager.updateViewLayout(targetView, params)
+                    
+                    // Atualiza a posição do alvo globalmente para os toques!
+                    val location = IntArray(2)
+                    targetView.getLocationOnScreen(location)
+                    TouchDispatcher.targetX = location[0] + 75f // Centro
+                    TouchDispatcher.targetY = location[1] + 75f
                     true
                 }
                 else -> false
             }
         }
+        windowManager.addView(targetView, params)
+    }
 
-        windowManager.addView(overlayView, params)
-        cameraExecutor = Executors.newSingleThreadExecutor()
-        startCamera()
+    private fun setupCameraWindow() {
+        cameraView = android.view.LayoutInflater.from(this).inflate(R.layout.layout_floating_camera, null)
+        val params = WindowManager.LayoutParams(240, 320, WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, android.graphics.PixelFormat.TRANSLUCENT)
+        params.gravity = android.view.Gravity.TOP or android.view.Gravity.START
+        
+        // Adicione aqui a mesma lógica de arrastar (setOnTouchListener) que já tínhamos para a câmeraView...
+        
+        windowManager.addView(cameraView, params)
     }
 
     private fun startCamera() {
-        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
+        val cameraProviderFuture = androidx.camera.lifecycle.ProcessCameraProvider.getInstance(this)
         cameraProviderFuture.addListener({
             val cameraProvider = cameraProviderFuture.get()
-
-            val preview = Preview.Builder().build().also {
-                it.setSurfaceProvider(overlayView.findViewById<PreviewView>(R.id.viewFinder).surfaceProvider)
+            val preview = androidx.camera.core.Preview.Builder().build().also {
+                it.setSurfaceProvider(cameraView.findViewById<androidx.camera.view.PreviewView>(R.id.viewFinder).surfaceProvider)
             }
 
-            val imageAnalyzer = ImageAnalysis.Builder()
-                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
-                .build()
-                .also { analysis ->
-                    analysis.setAnalyzer(cameraExecutor, MediaPipeHandTracker(this) { gesture ->
-                        ContextCompat.getMainExecutor(this).execute {
-                            val tvGestureOutput = overlayView.findViewById<TextView>(R.id.tvGestureOutput)
-                            tvGestureOutput.text = gesture
-                            tvGestureOutput.setTextColor(android.graphics.Color.BLUE)
-                        }
+            val skeletonView = cameraView.findViewById<SkeletonView>(R.id.skeletonView)
+
+            val imageAnalyzer = androidx.camera.core.ImageAnalysis.Builder()
+                .setOutputImageFormat(androidx.camera.core.ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
+                .build().also { analysis ->
+                    analysis.setAnalyzer(cameraExecutor, MediaPipePoseTracker(this, skeletonView) { actionText ->
+                        // Atualiza o texto na UI
                     })
                 }
 
-            val cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
-
-            try {
-                cameraProvider.unbindAll()
-                cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageAnalyzer)
-            } catch (exc: Exception) {}
-        }, ContextCompat.getMainExecutor(this))
+            cameraProvider.unbindAll()
+            cameraProvider.bindToLifecycle(this, androidx.camera.core.CameraSelector.DEFAULT_FRONT_CAMERA, preview, imageAnalyzer)
+        }, androidx.core.content.ContextCompat.getMainExecutor(this))
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        if (::overlayView.isInitialized) windowManager.removeView(overlayView)
-        cameraExecutor.shutdown()
-    }
-
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel("KINECT_CHANNEL", "Kinect Service", NotificationManager.IMPORTANCE_LOW)
-            getSystemService(NotificationManager::class.java)?.createNotificationChannel(channel)
-        }
+        windowManager.removeView(cameraView)
+        windowManager.removeView(targetView)
     }
 }
