@@ -70,6 +70,8 @@ class MediaPipePoseTracker(
                     // Correr Lados: Nariz ou quadris estão muito na borda
                     else if (nose.x() < 0.3f) detectedPhysicalAction = "CORRER_ESQUERDA" // Lembrete: câmera inverte E/D
                     else if (nose.x() > 0.7f) detectedPhysicalAction = "CORRER_DIREITA"
+                    // Correr pra frente: Tornozelos oscilam rapidamente mas a distância X (horizontal) dos pés varia pouco
+                    else if (leftAnkle.y() < 0.75f && rightAnkle.y() > 0.85f || leftAnkle.y() > 0.85f && rightAnkle.y() < 0.75f) detectedPhysicalAction = "CORRER_FRENTE"
 
                     if (detectedPhysicalAction != "NONE") {
                         // Busca o que fazer na tela com base no mapeamento do usuário
