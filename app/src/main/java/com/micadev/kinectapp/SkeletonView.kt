@@ -18,7 +18,7 @@ class SkeletonView(context: Context, attrs: AttributeSet?) : View(context, attrs
 
     fun setLandmarks(newLandmarks: List<NormalizedLandmark>) {
         landmarks = newLandmarks
-        invalidate() // Força o re-desenho
+        invalidate() 
     }
 
     fun clear() {
@@ -33,22 +33,19 @@ class SkeletonView(context: Context, attrs: AttributeSet?) : View(context, attrs
         val w = width.toFloat()
         val h = height.toFloat()
 
-        // Desenha os pontos
+        // Desenha os pontos nas coordenadas exatas (pois a imagem já foi rotacionada/espelhada na IA)
         for (landmark in landmarks) {
-            // Inverte o X pelo espelhamento da tela
-            canvas.drawCircle((1f - landmark.x()) * w, landmark.y() * h, 8f, paint)
+            canvas.drawCircle(landmark.x() * w, landmark.y() * h, 8f, paint)
         }
 
-        // Função auxiliar para desenhar a linha do osso
         fun drawBone(start: Int, end: Int) {
             canvas.drawLine(
-                (1f - landmarks[start].x()) * w, landmarks[start].y() * h,
-                (1f - landmarks[end].x()) * w, landmarks[end].y() * h,
+                landmarks[start].x() * w, landmarks[start].y() * h,
+                landmarks[end].x() * w, landmarks[end].y() * h,
                 paint
             )
         }
 
-        // Ligações básicas do Homem-Palito (MediaPipe Pose Indexes)
         drawBone(11, 12) // Ombros
         drawBone(11, 23) // Tronco Esq
         drawBone(12, 24) // Tronco Dir
