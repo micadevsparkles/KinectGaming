@@ -1,7 +1,7 @@
-// MediaPipePoseTracker.kt
 package com.micadev.kinectapp
 
 import android.content.Context
+import android.graphics.Matrix
 import android.os.SystemClock
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
@@ -9,7 +9,6 @@ import com.google.mediapipe.framework.image.BitmapImageBuilder
 import com.google.mediapipe.tasks.core.BaseOptions
 import com.google.mediapipe.tasks.vision.core.RunningMode
 import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarker
-import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarkerResult
 
 class MediaPipePoseTracker(
     private val context: Context,
@@ -19,7 +18,7 @@ class MediaPipePoseTracker(
 
     private var poseLandmarker: PoseLandmarker? = null
     private var lastActionTime = 0L
-    private val cooldown = 800L // Evita spam de ações
+    private val cooldown = 1000L // Aumentado para 1 segundo para maior estabilidade
 
     init {
         val baseOptions = BaseOptions.builder().setModelAssetPath("pose_landmarker_lite.task").build()
@@ -30,17 +29,26 @@ class MediaPipePoseTracker(
 
     @androidx.annotation.OptIn(androidx.camera.core.ExperimentalGetImage::class)
     override fun analyze(imageProxy: ImageProxy) {
-        val bitmap = imageProxy.toBitmap()
-        val result = poseLandmarker?.detect(BitmapImageBuilder(bitmap).build())
+        val originalBitmap = imageProxy.toBitmap()
+        
+        // CORREÇÃO DE ROTAÇÃO E ESPELHAMENTO
+        val matrix = Matrix()
+        matrix.postRotate(imageProxy.imageInfo.rotationDegrees.toFloat()) // Põe em pé
+        matrix.postScale(-1f, 1f) // Efeito espelho (Câmera Frontal)
+        
+        val fixedBitmap = android.graphics.Bitmap.createBitmap(
+            originalBitmap, 0, 0, originalBitmap.width, originalBitmap.height, matrix, false
+        )
+
+        // Agora a IA analisa a imagem consertada
+        val result = poseLandmarker?.detect(BitmapImageBuilder(fixedBitmap).build())
 
         result?.let { poseResult ->
             if (poseResult.landmarks().isNotEmpty()) {
                 val landmarks = poseResult.landmarks()[0]
                 
-                // Envia os pontos para desenhar o "Homem-Palito"
                 skeletonView.setLandmarks(landmarks)
 
-                // Lógica de Gestos
                 val leftWrist = landmarks[15]
                 val rightWrist = landmarks[16]
                 val leftAnkle = landmarks[27]
@@ -54,27 +62,21 @@ class MediaPipePoseTracker(
                     val prefs = context.getSharedPreferences("KinectMappings", Context.MODE_PRIVATE)
                     var detectedPhysicalAction = "NONE"
 
-                    // Lógicas simplificadas (Y = 0 é o topo da tela, Y = 1 é a base)
-                    // Pulo: O nariz sobe rapidamente (exemplo: y < 0.2)
+                    // Pulo
                     if (nose.y() < 0.25f) detectedPhysicalAction = "PULO"
-                    
-                    // Agachar: Quadril desce perto da base da câmera (exemplo: y > 0.8)
+                    // Agachar
                     else if (leftHip.y() > 0.75f && rightHip.y() > 0.75f) detectedPhysicalAction = "AGACHAR"
-                    
-                    // Soco: Pulso passa a frente do corpo na lateral ou sobe na altura do rosto
+                    // Soco
                     else if (leftWrist.y() < 0.4f || rightWrist.y() < 0.4f) detectedPhysicalAction = "SOCO"
-                    
-                    // Chute: Tornozelo sobe alto em relação ao quadril
+                    // Chute
                     else if (leftAnkle.y() < 0.6f || rightAnkle.y() < 0.6f) detectedPhysicalAction = "CHUTE"
-                    
-                    // Correr Lados: Nariz ou quadris estão muito na borda
-                    else if (nose.x() < 0.3f) detectedPhysicalAction = "CORRER_ESQUERDA" // Lembrete: câmera inverte E/D
+                    // Correr pra Frente
+                    else if ((leftAnkle.y() < 0.75f && rightAnkle.y() > 0.85f) || (leftAnkle.y() > 0.85f && rightAnkle.y() < 0.75f)) detectedPhysicalAction = "CORRER_FRENTE"
+                    // Correr Lados
+                    else if (nose.x() < 0.3f) detectedPhysicalAction = "CORRER_ESQUERDA" 
                     else if (nose.x() > 0.7f) detectedPhysicalAction = "CORRER_DIREITA"
-                    // Correr pra frente: Tornozelos oscilam rapidamente mas a distância X (horizontal) dos pés varia pouco
-                    else if (leftAnkle.y() < 0.75f && rightAnkle.y() > 0.85f || leftAnkle.y() > 0.85f && rightAnkle.y() < 0.75f) detectedPhysicalAction = "CORRER_FRENTE"
 
                     if (detectedPhysicalAction != "NONE") {
-                        // Busca o que fazer na tela com base no mapeamento do usuário
                         val touchAction = prefs.getString(detectedPhysicalAction, "NONE")
                         if (touchAction != "NONE") {
                             lastActionTime = now
