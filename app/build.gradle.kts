@@ -39,3 +39,15 @@ dependencies {
     implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
 }
+
+dependencies {
+    implementation("com.google.mediapipe:tasks-vision:0.10.14")
+}
+
+dependencies {
+    implementation("com.google.mediapipe:tasks-vision:0.10.14")
+}
+
+dependencies {
+    implementation("com.google.mediapipe:tasks-vision:0.10.14")
+}
