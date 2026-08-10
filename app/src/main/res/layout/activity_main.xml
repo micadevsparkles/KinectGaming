@@ -14,7 +14,7 @@
         android:textColor="@color/text_light"
         android:textSize="28sp"
         android:textStyle="bold"
-        android:layout_marginTop="64dp"
+        android:layout_marginTop="32dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
@@ -31,62 +31,100 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <SeekBar
-        android:id="@+id/seekBarSensitivity"
+    <!-- Área das Colunas de Configuração -->
+    <ScrollView
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:max="150"
+        android:layout_height="0dp"
         android:layout_marginTop="16dp"
-        android:layout_marginStart="32dp"
-        android:layout_marginEnd="32dp"
-        app:layout_constraintTop_toBottomOf="@id/rgGameMode"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-    
-    <!-- Seletor de Modo de Jogo -->
-    <RadioGroup
-        android:id="@+id/rgGameMode"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginTop="24dp"
+        android:layout_marginBottom="16dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
         app:layout_constraintTop_toBottomOf="@id/tvStatus"
+        app:layout_constraintBottom_toTopOf="@id/btnToggleService"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <RadioButton
-            android:id="@+id/rbModeClick"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Modo Clique"
-            android:textColor="@color/text_light"
-            android:checked="true"
-            android:buttonTint="@color/btn_on"
-            android:layout_marginEnd="16dp"/>
+            android:orientation="vertical">
 
-        <RadioButton
-            android:id="@+id/rbModeSwipe"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Modo Swipe"
-            android:textColor="@color/text_light"
-            android:buttonTint="@color/btn_on"/>
-    </RadioGroup>
+            <!-- Cabeçalho das Colunas -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingBottom="8dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Movimento do Corpo"
+                    android:textColor="@color/text_light"
+                    android:textStyle="bold"
+                    android:textAlignment="center"/>
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Toque na Tela"
+                    android:textColor="@color/text_light"
+                    android:textStyle="bold"
+                    android:textAlignment="center"/>
+            </LinearLayout>
 
-    <!-- ToggleButton Gigante -->
+            <!-- Slot 1 -->
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="8dp">
+                <Spinner android:id="@+id/spinPhys1" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:background="#DDDDDD" android:layout_marginEnd="4dp"/>
+                <Spinner android:id="@+id/spinTouch1" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:background="#DDDDDD" android:layout_marginStart="4dp"/>
+            </LinearLayout>
+
+            <!-- Slot 2 -->
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="8dp">
+                <Spinner android:id="@+id/spinPhys2" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:background="#DDDDDD" android:layout_marginEnd="4dp"/>
+                <Spinner android:id="@+id/spinTouch2" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:background="#DDDDDD" android:layout_marginStart="4dp"/>
+            </LinearLayout>
+
+            <!-- Slot 3 -->
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="8dp">
+                <Spinner android:id="@+id/spinPhys3" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:background="#DDDDDD" android:layout_marginEnd="4dp"/>
+                <Spinner android:id="@+id/spinTouch3" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:background="#DDDDDD" android:layout_marginStart="4dp"/>
+            </LinearLayout>
+
+            <!-- Slot 4 -->
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="8dp">
+                <Spinner android:id="@+id/spinPhys4" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:background="#DDDDDD" android:layout_marginEnd="4dp"/>
+                <Spinner android:id="@+id/spinTouch4" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:background="#DDDDDD" android:layout_marginStart="4dp"/>
+            </LinearLayout>
+
+            <!-- Slot 5 -->
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="8dp">
+                <Spinner android:id="@+id/spinPhys5" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:background="#DDDDDD" android:layout_marginEnd="4dp"/>
+                <Spinner android:id="@+id/spinTouch5" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:background="#DDDDDD" android:layout_marginStart="4dp"/>
+            </LinearLayout>
+            
+            <!-- Slot 6 -->
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="8dp">
+                <Spinner android:id="@+id/spinPhys6" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:background="#DDDDDD" android:layout_marginEnd="4dp"/>
+                <Spinner android:id="@+id/spinTouch6" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:background="#DDDDDD" android:layout_marginStart="4dp"/>
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- ToggleButton Menor na Base -->
     <ToggleButton
         android:id="@+id/btnToggleService"
-        android:layout_width="200dp"
-        android:layout_height="200dp"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
         android:background="@drawable/btn_toggle_selector"
         android:textColor="@color/text_light"
-        android:textSize="32sp"
+        android:textSize="24sp"
         android:textStyle="bold"
         android:textOff="OFF"
         android:textOn="ON"
         android:elevation="8dp"
         android:stateListAnimator="@null"
-        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginBottom="24dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
