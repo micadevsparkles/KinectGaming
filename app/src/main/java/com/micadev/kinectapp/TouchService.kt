@@ -2,7 +2,6 @@ package com.micadev.kinectapp
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription
-import android.accessibilityservice.GestureResultCallback
 import android.graphics.Path
 import android.view.accessibility.AccessibilityEvent
 import android.content.res.Resources
@@ -36,7 +35,6 @@ object TouchDispatcher {
 }
 
 class TouchService : AccessibilityService() {
-    // TRAVA ANTI-CRASH: Evita spam de gestos que derrubam o serviço
     private var isExecuting = false
 
     override fun onServiceConnected() {
@@ -49,7 +47,7 @@ class TouchService : AccessibilityService() {
         isExecuting = true
         
         try {
-            dispatchGesture(gesture, object : GestureResultCallback() {
+            dispatchGesture(gesture, object : AccessibilityService.GestureResultCallback() {
                 override fun onCompleted(gestureDescription: GestureDescription?) { isExecuting = false }
                 override fun onCancelled(gestureDescription: GestureDescription?) { isExecuting = false }
             }, null)
@@ -60,12 +58,10 @@ class TouchService : AccessibilityService() {
 
     fun click(x: Float, y: Float, isDouble: Boolean = false) {
         val path = Path().apply { moveTo(x, y) }
-        // Duração de 100ms simula um dedo humano tocando na tela
         val stroke = GestureDescription.StrokeDescription(path, 0, 100)
         val builder = GestureDescription.Builder().addStroke(stroke)
         
         if (isDouble) {
-            // Adiciona o segundo toque logo após o primeiro
             val stroke2 = GestureDescription.StrokeDescription(path, 150, 100)
             builder.addStroke(stroke2)
         }
@@ -80,7 +76,6 @@ class TouchService : AccessibilityService() {
 
     fun swipe(startX: Float, startY: Float, endX: Float, endY: Float) {
         val path = Path().apply { moveTo(startX, startY); lineTo(endX, endY) }
-        // Duração de 300ms para um arrasto mais natural
         dispatchSafeGesture(GestureDescription.Builder().addStroke(GestureDescription.StrokeDescription(path, 0, 300)).build())
     }
 
